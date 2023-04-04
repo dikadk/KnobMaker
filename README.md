@@ -6,5 +6,3 @@
 
 
 ![My Image](./screenshot.png)
-
-[Link to video](./video_instruction.mp4)

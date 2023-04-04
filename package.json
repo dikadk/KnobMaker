@@ -21,7 +21,7 @@
     "editorType": [
       "figma"
     ],
-    "id": "knob-maker",
+    "id": "1224904379301339665",
     "name": "KnobMaker",
     "main": "src/main.ts",
     "ui": "src/ui.tsx"
