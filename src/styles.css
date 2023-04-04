@@ -1,0 +1,73 @@
+/* styles.css */
+body {
+  font-family: "Arial", sans-serif;
+  margin: 0;
+  height: 100vh;
+}
+
+.container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo img {
+  width: 80px;
+  height: 80px;
+}
+
+.customButton {
+  background-color: #eecf2e; /* Change this to your desired color */
+  border: none;
+  color: white;
+  text-align: center;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  padding: 10px 24px;
+  text-decoration: none;
+  transition-duration: 0.4s;
+}
+
+.customButton:hover {
+  background-color: #f5e692;
+}
+
+.animatedGradient {
+  height: "100vh";
+  display: "flex";
+  justify-content: "center";
+  align-items: "center";
+  background-size: 400% 400%;
+  animation: gradientAnimation 10s ease infinite;
+  background: linear-gradient(45deg, #cf362e 30%, #033059 90%);
+}
+
+.vertical-column {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  gap: 16px; /* Adjust the space between child elements */
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
