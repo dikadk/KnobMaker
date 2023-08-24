@@ -1,6 +1,13 @@
 import { once, showUI } from "@create-figma-plugin/utilities";
 
-import { CloseHandler, CreateKnobHandler } from "./types";
+import {
+  CloseHandler,
+  CreateRotaryKnobHandler,
+  CreateLinearKnobHandler,
+  CREATE_ROTARY_KNOB,
+  CREATE_LINEAR_KNOB,
+  Direction,
+} from "./types";
 
 function rotateAroundCenter(
   node: ComponentNode,
@@ -91,22 +98,51 @@ function isCenterComponent(node: SceneNode) {
   return node.name.toLowerCase().includes("center");
 }
 
+function moveThumb(
+  node: ComponentNode,
+  centerNode: SceneNode,
+  direction: string,
+  frameNum: number,
+  frames: number
+) {
+  const frame = node.parent as FrameNode;
+  const isHorizontal = direction === Direction.Horizontal.toString();
+  const startOffset = isHorizontal
+    ? node.x + node.width / 2
+    : node.y + node.height / 2;
+  const distancePerFrame = isHorizontal
+    ? (frame.width - startOffset * 2) / (frames - 1)
+    : (frame.height - startOffset * 2) / (frames - 1);
+  const distance = frameNum * distancePerFrame;
+  console.log("startOffset:" + startOffset);
+  console.log("node.x:" + node.x);
+  console.log("node.height:" + node.height);
+  console.log("distancePerFrame:" + distancePerFrame);
+  console.log("frame.height:" + frame.height);
+  if (direction === Direction.Horizontal.toString()) {
+    node.x += +distance;
+  } else {
+    node.y += +distance;
+  }
+}
+
 export default function () {
-  once<CreateKnobHandler>(
-    "CREATE_KNOB",
+  once<CreateRotaryKnobHandler>(
+    "CREATE_ROTARY_KNOB",
     function (frames: number, degrees: number) {
       //get selection first and check if it's a frame
       const selection = figma.currentPage.selection[0];
+      console.log("CreateRotaryKnobHandler");
       if (selection.type != "FRAME") {
         figma.notify("Please select a Frame");
-        figma.closePlugin();
+        //figma.closePlugin();
         return;
       }
       const frame = selection as FrameNode;
 
       if (frame.children.length === 0) {
         figma.notify("Please make sure the frame has children");
-        figma.closePlugin();
+        //figma.closePlugin();
         return;
       }
 
@@ -122,7 +158,7 @@ export default function () {
         figma.notify(
           "Please make sure the frame has a Rotating pointer and a Center component"
         );
-        figma.closePlugin();
+        //figma.closePlugin();
         return;
       }
 
@@ -161,14 +197,86 @@ export default function () {
         figma.currentPage.appendChild(knobFrame);
         figma.viewport.scrollAndZoomIntoView([knobFrame]);
       }
-      figma.closePlugin();
+      //figma.closePlugin();
     }
   );
+  once<CreateLinearKnobHandler>(
+    "CREATE_LINEAR_KNOB",
+    function (frames: number, direction: string) {
+      console.log("CreateLinearKnobHandler");
+      //get selection first and check if it's a frame
+      const selection = figma.currentPage.selection[0];
+      if (selection.type != "FRAME") {
+        figma.notify("Please select a Frame");
+        figma.closePlugin();
+        return;
+      }
+      const frame = selection as FrameNode;
+
+      if (frame.children.length === 0) {
+        figma.notify("Please make sure the frame has children");
+        //figma.closePlugin();
+        return;
+      }
+
+      let frameRotationPointer = frame.findChild((node) =>
+        isRotatingPointer(node)
+      );
+
+      let frameCenterComponent = frame.findChild((node) =>
+        isCenterComponent(node)
+      );
+
+      if (!frameRotationPointer || !frameCenterComponent) {
+        figma.notify(
+          "Please make sure the frame has a Rotating pointer and a Center component"
+        );
+        figma.closePlugin();
+        return;
+      }
+
+      let knobFrame = figma.createFrame();
+      knobFrame.name = frame.name + " - filmstrip";
+      knobFrame.backgrounds = [
+        { color: { r: 0, g: 0, b: 0 }, type: "SOLID", opacity: 0 },
+      ];
+      knobFrame.x = frame.x + frame.width + 50;
+      knobFrame.y = frame.y;
+      knobFrame.resizeWithoutConstraints(frame.width, frame.height * frames);
+
+      for (let i = 0; i < frames; i++) {
+        let cl = frame.clone();
+        cl.name = "";
+        cl.y = i * frame.height;
+
+        let rotationPointer = cl.findChild((node) => isRotatingPointer(node));
+
+        let centerComponent = cl.findChild((node) => isCenterComponent(node));
+
+        if (rotationPointer && centerComponent) {
+          let rt = rotationPointer as ComponentNode;
+          moveThumb(rt, centerComponent, direction, i, frames);
+
+          knobFrame.appendChild(cl);
+        } else {
+          break;
+        }
+      }
+      resizeFrameToFitContents(knobFrame);
+
+      if (knobFrame.children.length > 0) {
+        figma.currentPage.appendChild(knobFrame);
+        figma.viewport.scrollAndZoomIntoView([knobFrame]);
+      }
+      //figma.closePlugin();
+    }
+  );
+
   once<CloseHandler>("CLOSE", function () {
     figma.closePlugin();
   });
   showUI({
-    height: 480,
+    height: 520,
     width: 250,
   });
 }
