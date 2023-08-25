@@ -1,4 +1,4 @@
-import { once, showUI } from "@create-figma-plugin/utilities";
+import { once, on, showUI } from "@create-figma-plugin/utilities";
 
 import {
   CloseHandler,
@@ -18,8 +18,9 @@ function rotateAroundCenter(
   const centerX = centerNode.x + centerNode.width / 2;
   const centerY = centerNode.y + centerNode.height / 2;
 
-  console.log("centerX:" + centerX);
-  console.log("centerY:" + centerY);
+  //console.log("centerX:" + centerX);
+  //console.log("centerY:" + centerY);
+  console.log("angleInDegrees:" + angleInDegrees);
 
   // Calculate the relative position of the node to rotate
   const relativeX = node.x - centerX;
@@ -91,11 +92,20 @@ function resizeFrameToFitContents(frameNode: FrameNode) {
 }
 
 function isRotatingPointer(node: SceneNode) {
-  return node.name.toLowerCase().includes("pointer");
+  return (
+    node.name.toLowerCase().includes("pointer") ||
+    node.name.toLowerCase().includes("knob") ||
+    node.name.toLowerCase().includes("thumb")
+  );
 }
 
 function isCenterComponent(node: SceneNode) {
-  return node.name.toLowerCase().includes("center");
+  return (
+    node.name.toLowerCase().includes("center") ||
+    node.name.toLowerCase().includes("track") ||
+    node.name.toLowerCase().includes("bar") ||
+    node.name.toLowerCase().includes("bg")
+  );
 }
 
 function moveThumb(
@@ -127,12 +137,21 @@ function moveThumb(
 }
 
 export default function () {
-  once<CreateRotaryKnobHandler>(
+  on<CreateRotaryKnobHandler>(
     "CREATE_ROTARY_KNOB",
-    function (frames: number, degrees: number) {
+    function (
+      frames: number,
+      startAngle: number,
+      endAngle: number,
+      frameStartAngle: number
+    ) {
       //get selection first and check if it's a frame
       const selection = figma.currentPage.selection[0];
-      console.log("CreateRotaryKnobHandler");
+      //console.log("CreateRotaryKnobHandler");
+
+      //console.log("startAngle", startAngle);
+      //console.log("endAngle", endAngle);
+      //console.log("frameAngle", frameStartAngle);
       if (selection.type != "FRAME") {
         figma.notify("Please select a Frame");
         //figma.closePlugin();
@@ -171,7 +190,10 @@ export default function () {
       knobFrame.y = frame.y;
       knobFrame.resizeWithoutConstraints(frame.width, frame.height * frames);
 
-      const degreePerFrame = degrees / frames;
+      const degrees = 360 - startAngle + endAngle;
+      const degreePerFrame = degrees / (frames - 1);
+      console.log("degrees:" + degrees);
+      console.log("degreePerFrame:" + degreePerFrame);
 
       for (let i = 0; i < frames; i++) {
         let cl = frame.clone();
@@ -184,8 +206,23 @@ export default function () {
 
         if (rotationPointer && centerComponent) {
           let rt = rotationPointer as ComponentNode;
-          rotateAroundCenter(rt, centerComponent, degreePerFrame * i);
+          let initialRotation = startAngle - frameStartAngle;
+          if (i === 0) {
+            let initialRotation = startAngle - frameStartAngle;
+            if (initialRotation < 0) initialRotation = initialRotation + 360;
 
+            rotateAroundCenter(rt, centerComponent, initialRotation);
+            //console.log("initialRotation:" + initialRotation);
+            //console.log("startAngle:" + startAngle);
+            //console.log("frameStartAngle:" + startAngle);
+          } else {
+            rotateAroundCenter(
+              rt,
+              centerComponent,
+              initialRotation + degreePerFrame * i
+            );
+            //console.log("degreePerFrame:" + degreePerFrame * i);
+          }
           knobFrame.appendChild(cl);
         } else {
           break;
@@ -200,7 +237,7 @@ export default function () {
       //figma.closePlugin();
     }
   );
-  once<CreateLinearKnobHandler>(
+  on<CreateLinearKnobHandler>(
     "CREATE_LINEAR_KNOB",
     function (frames: number, direction: string) {
       console.log("CreateLinearKnobHandler");
@@ -240,7 +277,7 @@ export default function () {
       knobFrame.backgrounds = [
         { color: { r: 0, g: 0, b: 0 }, type: "SOLID", opacity: 0 },
       ];
-      knobFrame.x = frame.x + frame.width + 50;
+      knobFrame.x = frame.x + frame.width + frame.width * 2;
       knobFrame.y = frame.y;
       knobFrame.resizeWithoutConstraints(frame.width, frame.height * frames);
 

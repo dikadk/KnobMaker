@@ -11,7 +11,12 @@ export enum Direction {
 
 export interface CreateRotaryKnobHandler extends EventHandler {
   name: "CREATE_ROTARY_KNOB";
-  handler: (frames: number, startAngle: number, endAngle: number) => void;
+  handler: (
+    frames: number,
+    startAngle: number,
+    endAngle: number,
+    frameStartAngle: number
+  ) => void;
 }
 
 export interface CreateLinearKnobHandler extends EventHandler {

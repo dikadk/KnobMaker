@@ -76,11 +76,14 @@ function Plugin() {
   const [frames, setFrames] = useState<number | null>(3);
   const [framesString, setFramesString] = useState("3");
 
-  const [startAngle, setStartAngle] = useState<number | null>(270);
-  const [startAngleString, setStartAngleString] = useState("270");
+  const [frameAngle, setFrameAngle] = useState<number | null>(360);
+  const [frameAngleString, setFrameAngleString] = useState("360");
 
-  const [endAngle, setEndAngle] = useState<number | null>(75);
-  const [endAngleString, setEndAngleString] = useState("75");
+  const [startAngle, setStartAngle] = useState<number | null>(225);
+  const [startAngleString, setStartAngleString] = useState("225");
+
+  const [endAngle, setEndAngle] = useState<number | null>(135);
+  const [endAngleString, setEndAngleString] = useState("135");
 
   const [selectedDirection, setSelectedRadio] = useState<string>(
     Direction.Vertical.toString()
@@ -94,20 +97,22 @@ function Plugin() {
 
   const handleCreateRectanglesButtonClick = useCallback(
     function () {
-      console.log("frames", frames);
-      console.log("startAngle", startAngle);
-      console.log("endAngle", endAngle);
-      console.log("direction", selectedDirection);
-      if (frames !== null && startAngle !== null && endAngle !== null) {
+      if (
+        frames !== null &&
+        startAngle !== null &&
+        endAngle !== null &&
+        selectedDirection !== null &&
+        frameAngle !== null
+      ) {
         if (selectedDirection === Direction.Rotary.toString()) {
           emit<CreateRotaryKnobHandler>(
             "CREATE_ROTARY_KNOB",
             frames,
             startAngle,
-            endAngle
+            endAngle,
+            frameAngle
           );
         } else {
-          console.log("CREATE_LINEAR_KNOB");
           emit<CreateLinearKnobHandler>(
             "CREATE_LINEAR_KNOB",
             frames,
@@ -116,7 +121,7 @@ function Plugin() {
         }
       }
     },
-    [frames, startAngle, endAngle, selectedDirection]
+    [frames, startAngle, endAngle, frameAngle, selectedDirection]
   );
   const handleCloseButtonClick = useCallback(function () {
     emit<CloseHandler>("CLOSE");
@@ -133,6 +138,20 @@ function Plugin() {
         </div>
         <VerticalSpace space="small" />
         <Text>
+          <Muted>Frame Angle:</Muted>
+        </Text>
+        <VerticalSpace space="extraSmall" />
+        <TextboxNumeric
+          id={"frameAngle"}
+          onNumericValueInput={setFrameAngle}
+          onValueInput={setFrameAngleString}
+          value={frameAngleString}
+          variant="border"
+          disabled={selectedDirection !== Direction.Rotary.toString()}
+          style={{ backgroundColor: "#430F0C" }}
+        />
+        <VerticalSpace space="small" />
+        <Text>
           <Muted>Start Angle</Muted>
         </Text>
         <VerticalSpace space="extraSmall" />
@@ -141,6 +160,7 @@ function Plugin() {
           onValueInput={setStartAngleString}
           value={startAngleString}
           variant="border"
+          disabled={selectedDirection !== Direction.Rotary.toString()}
           style={{ backgroundColor: "#430F0C" }}
         />
         <VerticalSpace space="small" />
@@ -153,6 +173,7 @@ function Plugin() {
           onValueInput={setEndAngleString}
           value={endAngleString}
           variant="border"
+          disabled={selectedDirection !== Direction.Rotary.toString()}
           style={{ backgroundColor: "#430F0C" }}
         />
         <VerticalSpace space="small" />
