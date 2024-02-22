@@ -12,7 +12,8 @@ import {
 function rotateAroundCenter(
   node: ComponentNode,
   centerNode: SceneNode,
-  angleInDegrees: number
+  angleInDegrees: number,
+  reverseDirection: boolean
 ) {
   // Calculate the center point of the target component
   const centerX = centerNode.x + centerNode.width / 2;
@@ -120,19 +121,29 @@ function moveThumb(
   const startOffset = isHorizontal
     ? node.x + node.width / 2
     : node.y + node.height / 2;
+
+  const endOffset = isHorizontal
+    ? frame.width - node.x - node.width / 2
+    : frame.height - node.y - node.height / 2;
+
+  const reverseDirection = startOffset > endOffset;
+  const offset = reverseDirection ? endOffset : startOffset;
+
   const distancePerFrame = isHorizontal
-    ? (frame.width - startOffset * 2) / (frames - 1)
-    : (frame.height - startOffset * 2) / (frames - 1);
+    ? (frame.width - offset * 2) / (frames - 1)
+    : (frame.height - offset * 2) / (frames - 1);
   const distance = frameNum * distancePerFrame;
-  console.log("startOffset:" + startOffset);
+  console.log("offset:" + offset);
   console.log("node.x:" + node.x);
   console.log("node.height:" + node.height);
   console.log("distancePerFrame:" + distancePerFrame);
   console.log("frame.height:" + frame.height);
+
+  const reverseMultiplier = reverseDirection ? -1 : 1;
   if (direction === Direction.Horizontal.toString()) {
-    node.x += +distance;
+    node.x += distance * reverseMultiplier;
   } else {
-    node.y += +distance;
+    node.y += distance * reverseMultiplier;
   }
 }
 
@@ -143,7 +154,9 @@ export default function () {
       frames: number,
       startAngle: number,
       endAngle: number,
-      frameStartAngle: number
+      frameStartAngle: number,
+      reverseDirection: boolean,
+      isHorizontalOutput: boolean
     ) {
       //get selection first and check if it's a frame
       const selection = figma.currentPage.selection[0];
@@ -197,8 +210,9 @@ export default function () {
 
       for (let i = 0; i < frames; i++) {
         let cl = frame.clone();
-        cl.name = "";
-        cl.y = i * frame.height;
+        cl.name = i + " frame";
+        if (isHorizontalOutput) cl.x = i * frame.width;
+        else cl.y = i * frame.height;
 
         let rotationPointer = cl.findChild((node) => isRotatingPointer(node));
 
@@ -211,7 +225,12 @@ export default function () {
             let initialRotation = startAngle - frameStartAngle;
             if (initialRotation < 0) initialRotation = initialRotation + 360;
 
-            rotateAroundCenter(rt, centerComponent, initialRotation);
+            rotateAroundCenter(
+              rt,
+              centerComponent,
+              initialRotation,
+              reverseDirection
+            );
             //console.log("initialRotation:" + initialRotation);
             //console.log("startAngle:" + startAngle);
             //console.log("frameStartAngle:" + startAngle);
@@ -219,7 +238,8 @@ export default function () {
             rotateAroundCenter(
               rt,
               centerComponent,
-              initialRotation + degreePerFrame * i
+              initialRotation + degreePerFrame * i,
+              reverseDirection
             );
             //console.log("degreePerFrame:" + degreePerFrame * i);
           }
@@ -239,7 +259,12 @@ export default function () {
   );
   on<CreateLinearKnobHandler>(
     "CREATE_LINEAR_KNOB",
-    function (frames: number, direction: string) {
+    function (
+      frames: number,
+      direction: string,
+      reverseDirection: boolean,
+      isHorizontalOutput: boolean
+    ) {
       console.log("CreateLinearKnobHandler");
       //get selection first and check if it's a frame
       const selection = figma.currentPage.selection[0];
@@ -284,10 +309,10 @@ export default function () {
       for (let i = 0; i < frames; i++) {
         let cl = frame.clone();
         cl.name = "";
-        cl.y = i * frame.height;
+        if (isHorizontalOutput) cl.x = i * frame.width;
+        else cl.y = i * frame.height;
 
         let rotationPointer = cl.findChild((node) => isRotatingPointer(node));
-
         let centerComponent = cl.findChild((node) => isCenterComponent(node));
 
         if (rotationPointer && centerComponent) {
@@ -303,7 +328,7 @@ export default function () {
 
       if (knobFrame.children.length > 0) {
         figma.currentPage.appendChild(knobFrame);
-        figma.viewport.scrollAndZoomIntoView([knobFrame]);
+        //figma.viewport.scrollAndZoomIntoView([knobFrame]);
       }
       //figma.closePlugin();
     }
@@ -313,7 +338,7 @@ export default function () {
     figma.closePlugin();
   });
   showUI({
-    height: 520,
+    height: 580,
     width: 250,
   });
 }

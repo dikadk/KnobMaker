@@ -7,7 +7,7 @@
     "styled-components": "^5.3.9"
   },
   "devDependencies": {
-    "@create-figma-plugin/build": "^2.6.0",
+    "@create-figma-plugin/build": "^3.1.0",
     "@create-figma-plugin/tsconfig": "^2.6.0",
     "@figma/plugin-typings": "1.57.1",
     "file-loader": "^6.2.0",

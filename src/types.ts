@@ -15,13 +15,20 @@ export interface CreateRotaryKnobHandler extends EventHandler {
     frames: number,
     startAngle: number,
     endAngle: number,
-    frameStartAngle: number
+    frameStartAngle: number,
+    reverseDirection: boolean,
+    isHorizontalOutput: boolean
   ) => void;
 }
 
 export interface CreateLinearKnobHandler extends EventHandler {
   name: "CREATE_LINEAR_KNOB";
-  handler: (frames: number, direction: string) => void;
+  handler: (
+    frames: number,
+    direction: string,
+    reverseDirection: boolean,
+    isHorizontalOutput: boolean
+  ) => void;
 }
 
 export interface CloseHandler extends EventHandler {

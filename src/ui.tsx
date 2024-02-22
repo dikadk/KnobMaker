@@ -12,7 +12,7 @@ import {
 } from "@create-figma-plugin/ui";
 import { emit } from "@create-figma-plugin/utilities";
 import { h, JSX } from "preact";
-import { useCallback, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
 import {
   CREATE_ROTARY_KNOB,
@@ -53,6 +53,17 @@ const options: Array<RadioButtonsOption> = [
   },
 ];
 
+const outputFramesOptions: Array<RadioButtonsOption> = [
+  {
+    children: <Text>Horizontal</Text>,
+    value: Direction.Horizontal.toString(),
+  },
+  {
+    children: <Text>Vertical</Text>,
+    value: Direction.Vertical.toString(),
+  },
+];
+
 const Row = styled.div`
   display: flex;
   flex-direction: row;
@@ -89,10 +100,77 @@ function Plugin() {
     Direction.Vertical.toString()
   );
 
+  const [reverseDirection, setReverseDirection] = useState<boolean>(false);
+  const [isHorizontalOutput, setIsHorizontalOutput] = useState<string>(
+    Direction.Horizontal.toString()
+  );
+
+  useEffect(() => {
+    // Load saved state data
+    figma.clientStorage.getAsync("myPluginState").then((data) => {
+      if (data) {
+        const state = JSON.parse(data);
+        setFrames(state.frames);
+        setFramesString(state.framesString);
+
+        setFrameAngle(state.frameAngle);
+        setFrameAngleString(state.frameAngleString);
+
+        setStartAngle(state.startAngle);
+        setStartAngleString(state.startAngleString);
+
+        setEndAngle(state.endAngle);
+        setEndAngleString(state.endAngleString);
+
+        setSelectedRadio(state.selectedDirection);
+        setReverseDirection(state.reverseDirection);
+
+        setIsHorizontalOutput(state.isHorizontalOutput);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    // Save state data
+    const state = {
+      frames,
+      framesString,
+
+      frameAngle,
+      frameAngleString,
+
+      startAngle,
+      startAngleString,
+
+      endAngle,
+      endAngleString,
+
+      selectedDirection,
+      reverseDirection,
+
+      isHorizontalOutput,
+    };
+    figma.clientStorage.setAsync("myPluginState", JSON.stringify(state));
+  }, [frames, framesString]);
+
   function handleChange(event: JSX.TargetedEvent<HTMLInputElement>) {
     const newValue = event.currentTarget.value;
     console.log(newValue);
     setSelectedRadio(newValue);
+  }
+
+  function handleReverseDirectionCheckbox(
+    event: JSX.TargetedEvent<HTMLInputElement>
+  ) {
+    const newValue = event.currentTarget.checked;
+    setReverseDirection(newValue);
+  }
+
+  function handleIsHorizontalOutputOptionChange(
+    event: JSX.TargetedEvent<HTMLInputElement>
+  ) {
+    const newValue = event.currentTarget.value;
+    setIsHorizontalOutput(newValue);
   }
 
   const handleCreateRectanglesButtonClick = useCallback(
@@ -110,18 +188,30 @@ function Plugin() {
             frames,
             startAngle,
             endAngle,
-            frameAngle
+            frameAngle,
+            reverseDirection,
+            isHorizontalOutput === Direction.Horizontal.toString()
           );
         } else {
           emit<CreateLinearKnobHandler>(
             "CREATE_LINEAR_KNOB",
             frames,
-            selectedDirection
+            selectedDirection,
+            reverseDirection,
+            isHorizontalOutput === Direction.Horizontal.toString()
           );
         }
       }
     },
-    [frames, startAngle, endAngle, frameAngle, selectedDirection]
+    [
+      frames,
+      startAngle,
+      endAngle,
+      frameAngle,
+      selectedDirection,
+      reverseDirection,
+      isHorizontalOutput,
+    ]
   );
   const handleCloseButtonClick = useCallback(function () {
     emit<CloseHandler>("CLOSE");
@@ -136,6 +226,18 @@ function Plugin() {
             style={{ width: "100px", height: "100px" }}
           />
         </div>
+        <VerticalSpace space="small" />
+        <Text>
+          <Muted>Knob Type:</Muted>
+        </Text>
+        <VerticalSpace space="small" />
+        <Columns space="extraSmall">
+          <RadioButtons
+            onChange={handleChange}
+            options={options}
+            value={selectedDirection}
+          />
+        </Columns>
         <VerticalSpace space="small" />
         <Text>
           <Muted>Frame Angle:</Muted>
@@ -190,13 +292,18 @@ function Plugin() {
         />
         <VerticalSpace space="small" />
         <VerticalSpace space="extraSmall" />
+        <Text>
+          <Muted>Output frames direction:</Muted>
+        </Text>
+        <VerticalSpace space="small" />
         <Columns space="extraSmall">
           <RadioButtons
-            onChange={handleChange}
-            options={options}
-            value={selectedDirection}
+            onChange={handleIsHorizontalOutputOptionChange}
+            options={outputFramesOptions}
+            value={isHorizontalOutput}
           />
         </Columns>
+
         <VerticalSpace space="large" />
         <Columns space="extraSmall">
           <Button

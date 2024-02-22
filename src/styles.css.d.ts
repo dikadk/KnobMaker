@@ -1,9 +1,9 @@
 declare const styles: {
-  readonly "container": string;
-  readonly "logo": string;
-  readonly "customButton": string;
   readonly "animatedGradient": string;
+  readonly "container": string;
+  readonly "customButton": string;
   readonly "gradientAnimation": string;
+  readonly "logo": string;
   readonly "vertical-column": string;
 };
 export = styles;
